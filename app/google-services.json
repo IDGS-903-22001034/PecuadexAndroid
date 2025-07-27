@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "814212999113",
+    "project_id": "pecuadex",
+    "storage_bucket": "pecuadex.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:814212999113:android:837f5ad14cfdf52abe6a18",
+        "android_client_info": {
+          "package_name": "com.pecuadex.bd"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAAndaxoTW0zN4XjqdbXffdsMf6Kn7AD9E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

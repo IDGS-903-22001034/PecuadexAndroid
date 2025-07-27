@@ -1,0 +1,27 @@
+package com.zurie.pecuadexproject.Data.Api
+
+import com.zurie.pecuadexproject.Data.Model.ProductoResponse
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.GET
+
+interface ApiServiceRazas {
+    @GET("api/ListaRazas")
+    suspend fun getRazas(): RazaResponse
+
+    companion object {
+        private var apiService: ApiServiceRazas? = null
+        private const val BASE_URL = "http://localhost:7209/"
+
+        fun getInstance(): ApiServiceRazas {
+            if (apiService == null) {
+                apiService = Retrofit.Builder()
+                    .baseUrl(BASE_URL)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build()
+                    .create(ApiServiceRazas::class.java)
+            }
+            return apiService!!
+        }
+    }
+}
