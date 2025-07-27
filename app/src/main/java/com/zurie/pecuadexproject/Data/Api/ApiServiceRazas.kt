@@ -1,6 +1,7 @@
 package com.zurie.pecuadexproject.Data.Api
 
 import com.zurie.pecuadexproject.Data.Model.ProductoResponse
+import com.zurie.pecuadexproject.Data.Model.RazaResponse
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
