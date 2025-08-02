@@ -5,6 +5,7 @@ import com.zurie.pecuadexproject.Data.Model.AnimalResponse
 import com.zurie.pecuadexproject.Data.Model.Espacio
 import com.zurie.pecuadexproject.Data.Model.EspacioResponse
 import retrofit2.Call
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
@@ -16,24 +17,24 @@ import retrofit2.http.Path
 
 interface ApiServiceEspacios {
 
-    @GET("api/ListaEspacios")
-    suspend fun getEspacios(): EspacioResponse
+    @GET("api/Espacios/ListaEspacios")
+    suspend fun getEspacios(): List<Espacio>
 
-    @GET("api/getEspacio/{id}")
+    @GET("api/Espacios/getEspacio/{id}")
     suspend fun getEspacio(@Path("id") id: Long): Espacio
 
-    @POST("api/AgregarEspacios")
-    fun agregarEspacio(@Body espacio: Espacio): Call<Espacio>
+    @POST("api/Espacios/AgregarEspacios")
+    suspend fun agregarEspacio(@Body espacio: Espacio): Response<Espacio>
 
-    @PUT("api/ModificarEspacio/{id}")
-    fun actualizarEspacio(@Path("id") id: Int, @Body espacio: Espacio): Call<Espacio>
+    @PUT("api/Espacios/ModificarEspacio/{id}")
+    suspend fun actualizarEspacio(@Path("id") id: Long, @Body espacio: Espacio): Response<Espacio>
 
-    @DELETE("api/EliminarEspacio/{id}")
-    fun eliminarEspacio(@Path("id") id: Int): Call<Void>
+    @DELETE("api/Espacios/EliminarEspacio/{id}")
+    suspend fun eliminarEspacio(@Path("id") id: Long): Response<Unit>
 
     companion object {
         private var apiService: ApiServiceEspacios? = null
-        private const val BASE_URL = "http://localhost:7209/"
+        private const val BASE_URL = "http://192.168.1.108:7209/"
 
         fun getInstance(): ApiServiceEspacios {
             if (apiService == null) {

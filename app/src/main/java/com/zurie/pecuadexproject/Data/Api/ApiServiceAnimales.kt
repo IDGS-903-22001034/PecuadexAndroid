@@ -2,8 +2,9 @@ package com.zurie.pecuadexproject.Data.Api
 
 import com.zurie.pecuadexproject.Data.Model.Animal
 import com.zurie.pecuadexproject.Data.Model.AnimalResponse
+import com.zurie.pecuadexproject.Data.Model.Espacio
 import retrofit2.Call
-import okhttp3.Response
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
@@ -14,29 +15,45 @@ import retrofit2.http.PUT
 import retrofit2.http.Path
 
 interface ApiServiceAnimales {
-    @GET("api/ListaAnimales")
-    suspend fun getAnimales(): AnimalResponse
+    @GET("api/Animales/ListaAnimales")
+    suspend fun getAnimales(): List<Animal>
 
-    @POST("api/AgregarAnimal")
-    fun agregarAnimal(@Body animal: Animal): Call<Animal>
+    @POST("api/Animales/AgregarAnimal")
+    suspend fun agregarAnimal(@Body animal: Animal): Response<Animal>
 
-    @PUT("api/ModificarAnimal/{id}")
-    fun actualizarAnimal(@Path("id") id: Int, @Body animal: Animal): Call<Animal>
+    @GET("api/Animales/ObtenerAnimal/{id}")
+    suspend fun obtenerAnimalPorId(@Path("id") id: Long): Animal
 
-    @DELETE("api/EliminarAnimal/{id}")
-    fun eliminarAnimal(@Path("id") id: Int): Call<Void>
+    @GET("api/Animales/ObtenerEnfermedadesAnimal/{id}")
+    suspend fun obtenerEnfermedadesDelAnimal(@Path("id") id: Long): List<Long>
+
+    @PUT("api/Animales/ActualizarEnfermedadesAnimal/{id}")
+    suspend fun actualizarEnfermedadesAnimal(
+        @Path("id") id: Long,
+        @Body enfermedadesIds: List<Long>
+    ): Response<Unit>
+
+    @PUT("api/Animales/ModificarAnimal/{id}")
+    suspend fun modificarAnimal(
+        @Path("id") id: Long,
+        @Body animal: Animal
+    ): Response<Unit>
+
+    @DELETE("api/Animales/EliminarAnimal/{id}")
+    suspend fun eliminarAnimal(@Path("id") id: Long): Response<Unit>
 
     companion object {
         private var apiService: ApiServiceAnimales? = null
-        private const val BASE_URL = "http://localhost:7209/"
+        private const val BASE_URL = "http://192.168.1.108:7209/"
 
         fun getInstance(): ApiServiceAnimales {
             if (apiService == null) {
-                apiService = Retrofit.Builder()
+                val retrofit = Retrofit.Builder()
                     .baseUrl(BASE_URL)
                     .addConverterFactory(GsonConverterFactory.create())
                     .build()
-                    .create(ApiServiceAnimales::class.java)
+
+                apiService = retrofit.create(ApiServiceAnimales::class.java)
             }
             return apiService!!
         }

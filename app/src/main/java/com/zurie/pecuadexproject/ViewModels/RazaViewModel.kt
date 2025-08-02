@@ -1,5 +1,6 @@
 package com.zurie.pecuadexproject.ViewModels
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -14,33 +15,28 @@ import com.zurie.pecuadexproject.State.RazaState
 import kotlinx.coroutines.launch
 
 class RazaViewModel : ViewModel() {
-    var state by mutableStateOf(RazaState())
-        private set
-
-    var response: List<Raza> by mutableStateOf(listOf())
-        private set
-
-    init {
-        obtenerProductos()
-    }
-
-    fun obtenerProductos() {
-        viewModelScope.launch {
-            state = state.copy(isLoading = true)
-
-            try {
-                val apiService = ApiServiceRazas.getInstance()
-                val productosList = apiService.getRazas().items
-                response = productosList
-
-                state = state.copy(
-                    isLoading = false,
-                    razas = response
-                )
-            } catch (e: Exception) {
-
-                state = state.copy(isLoading = false)
+        var state by mutableStateOf(RazaState())
+            private set
+        var response: List<Raza> by mutableStateOf(listOf())
+            private set
+        init {
+            obtenerRazas()
+        }
+        fun obtenerRazas() {
+            viewModelScope.launch {
+                state = state.copy(isLoading = true)
+                try {
+                    val apiService = ApiServiceRazas.getInstance()
+                    val razasList = apiService.getRazas()
+                    response = razasList
+                    state = state.copy(
+                        isLoading = false,
+                        razas = razasList
+                    )
+                } catch (e: Exception) {
+                    state = state.copy(isLoading = false)
+                    Log.e("RazaViewModel", "Error al obtener razas: ${e.message}")
+                }
             }
         }
-    }
 }

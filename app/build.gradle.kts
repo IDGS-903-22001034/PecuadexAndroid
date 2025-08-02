@@ -87,4 +87,17 @@ dependencies {
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation ("com.squareup.okhttp3:logging-interceptor:4.9.3")
+
+    implementation ("androidx.navigation:navigation-compose:2.7.7")
+    implementation ("androidx.compose.material:material-icons-extended:1.6.1")
+    implementation ("androidx.compose.ui:ui-tooling:1.6.1")
+    implementation ("androidx.compose.ui:ui:1.6.1")
+
+    implementation (platform("androidx.compose:compose-bom:2024.01.00")) // ejemplo
+    implementation ("androidx.compose.material3:material3")
+
+    implementation ("androidx.navigation:navigation-compose:2.7.0")
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.1")
+
+
 }

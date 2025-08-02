@@ -2,6 +2,7 @@ package com.zurie.pecuadexproject.Data.Api
 
 import com.zurie.pecuadexproject.Data.Model.Animal
 import com.zurie.pecuadexproject.Data.Model.AnimalResponse
+import com.zurie.pecuadexproject.Data.Model.Enfermedad
 import com.zurie.pecuadexproject.Data.Model.EnfermedadResponse
 import retrofit2.Call
 import retrofit2.Retrofit
@@ -15,12 +16,12 @@ import retrofit2.http.Path
 
 interface ApiServiceEnfermedades {
 
-    @GET("api/ListaEnfermedades")
-    suspend fun getEnfermedades(): EnfermedadResponse
+    @GET("api/Enfermedades/ListaEnfermedades")
+    suspend fun getEnfermedades(): List<Enfermedad>
 
     companion object {
         private var apiService: ApiServiceEnfermedades? = null
-        private const val BASE_URL = "http://localhost:7209/"
+        private const val BASE_URL = "http://192.168.1.108:7209/"
 
         fun getInstance(): ApiServiceEnfermedades {
             if (apiService == null) {
