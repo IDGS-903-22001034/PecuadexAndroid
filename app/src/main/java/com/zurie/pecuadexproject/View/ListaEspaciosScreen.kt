@@ -104,7 +104,7 @@ fun ListaEspaciosScreen(
                     iconResId = R.drawable.geocercado,
                     label = "Geocercas",
                     onClick = {
-                        navController.navigate("geofences")
+                        navController.navigate("mapa")
                         isMenuVisible = false
                     }
                 )
@@ -115,7 +115,7 @@ fun ListaEspaciosScreen(
                     iconResId = R.drawable.advertencia,
                     label = "Alertas",
                     onClick = {
-                        navController.navigate("alerts")
+                        navController.navigate("alertas")
                         isMenuVisible = false
                     }
                 )

@@ -1,6 +1,7 @@
 package com.zurie.pecuadexproject.View
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -10,9 +11,10 @@ import androidx.navigation.navArgument
 import androidx.navigation.navigation
 import com.zurie.pecuadexproject.UI.Screens.AgregarProduccionScreen
 import com.zurie.pecuadexproject.UI.Screens.EspacioScreen
+import com.zurie.pecuadexproject.ViewModels.MainViewModel
 
 @Composable
-fun AppNavGraph(navController: NavHostController) {
+fun AppNavGraph(navController: NavHostController, viewModel: MainViewModel) {
     NavHost(navController, startDestination = "login") {
         composable("login") { LoginScreen(navController) }
         composable("principal") { PrincipalScreen(navController) }
@@ -72,6 +74,20 @@ fun AppNavGraph(navController: NavHostController) {
             EditarEspacioScreen(
                 espacioId = espacioId,
                 navController = navController
+            )
+        }
+
+        composable("mapa") {
+            MapScreen(
+                navController = navController,
+                viewModel = viewModel
+            )
+        }
+
+        composable("alertas") {
+            AlertsScreen(
+                navController = navController,
+                viewModel = viewModel
             )
         }
     }
