@@ -22,7 +22,6 @@ fun AppNavGraph(navController: NavHostController, viewModel: MainViewModel) {
             ListaEspaciosScreen(navController)
         }
 
-        // Ruta para agregar animal con parámetro espacioId
         composable(
             "agregarAnimal/{espacioId}",
             arguments = listOf(navArgument("espacioId") { type = NavType.LongType })

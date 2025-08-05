@@ -33,7 +33,7 @@ import com.zurie.pecuadexproject.ViewModels.AnimalViewModel
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PrincipalScreen(navController: NavHostController) {
-    var isMenuVisible by remember { mutableStateOf(true) } // Menú visible por defecto
+    var isMenuVisible by remember { mutableStateOf(false) } // Menú visible por defecto
     val menuWidth = 100.dp // Mismo tamaño que la versión anterior
 
     // ViewModel para datos de animales

@@ -36,7 +36,7 @@ fun ListaEspaciosScreen(
     espacioViewModel: EspacioViewModel = viewModel(),
     animalViewModel: AnimalViewModel = viewModel(),
 ) {
-    var isMenuVisible by remember { mutableStateOf(true) }
+    var isMenuVisible by remember { mutableStateOf(false) }
     val menuWidth = 100.dp
 
     val estado = espacioViewModel.state

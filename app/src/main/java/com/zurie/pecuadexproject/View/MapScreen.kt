@@ -27,6 +27,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.navigation.NavHostController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
@@ -79,93 +80,13 @@ fun MapScreen(
         )
     }
 
-    Row(modifier = Modifier.fillMaxSize()) {
-        // Menú Lateral
-        AnimatedVisibility(
-            visible = isMenuVisible,
-            enter = slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(durationMillis = 300)),
-            exit = slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(durationMillis = 300)),
-            modifier = Modifier.width(menuWidth)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .background(Color(0xFFE74C3C)),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Top
-            ) {
-                Spacer(modifier = Modifier.height(24.dp))
-                Image(
-                    painter = painterResource(id = R.drawable.vaca),
-                    contentDescription = "Logo",
-                    modifier = Modifier.size(40.dp)
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-
-                IconWithText(iconResId = R.drawable.casa, label = "Tablero") {
-                    navController.navigate("principal")
-                    isMenuVisible = false
-                }
-                Spacer(modifier = Modifier.height(24.dp))
-
-                if (isMenuVisible) {
-                    Text("MÓDULOS", color = Color.White, fontSize = 12.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                IconWithText(
-                    iconResId = R.drawable.establo,
-                    label = "Espacios",
-                    onClick = {
-                        navController.navigate("listaEspacios")
-                        isMenuVisible = false
-                    }
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                IconWithText(
-                    iconResId = R.drawable.geocercado,
-                    label = "Geocercas",
-                    onClick = {
-                        navController.navigate("mapa")
-                        isMenuVisible = false
-                    }
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                IconWithText(
-                    iconResId = R.drawable.advertencia,
-                    label = "Alertas",
-                    onClick = {
-                        navController.navigate("alertas")
-                        isMenuVisible = false
-                    }
-                )
-            }
-        }
-
-        // Contenido del Mapa
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Contenido principal (Mapa y elementos)
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(AppColors.Background)
         ) {
-            // Botón para mostrar/ocultar el menú
-            IconButton(
-                onClick = { isMenuVisible = !isMenuVisible },
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(8.dp)
-            ) {
-                Icon(
-                    imageVector = if (isMenuVisible) Icons.Default.ChevronLeft else Icons.Default.Menu,
-                    contentDescription = "Toggle Menu",
-                    tint = Color(0xFFE74C3C)
-                )
-            }
-
             // Mapa
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
@@ -197,10 +118,35 @@ fun MapScreen(
                 }
             }
 
+            // Botón del menú hamburguesa (con mayor z-index y fondo)
+            Card(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
+                    .size(48.dp)
+                    .zIndex(2f),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                IconButton(
+                    onClick = { isMenuVisible = !isMenuVisible },
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Icon(
+                        imageVector = if (isMenuVisible) Icons.Default.ChevronLeft else Icons.Default.Menu,
+                        contentDescription = "Toggle Menu",
+                        tint = Color(0xFFE74C3C)
+                    )
+                }
+            }
+
+            // Cards de información
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 60.dp, start = 16.dp, end = 16.dp)
+                    .padding(top = 80.dp, start = 16.dp, end = 16.dp)
+                    .zIndex(1f)
             ) {
                 StatusCard(
                     title = "Conexión",
@@ -331,6 +277,73 @@ fun MapScreen(
                         )
                     }
                 }
+            }
+        }
+
+        // Menú Lateral (por encima de todo con mayor z-index)
+        AnimatedVisibility(
+            visible = isMenuVisible,
+            enter = slideInHorizontally(initialOffsetX = { -it }, animationSpec = tween(durationMillis = 300)),
+            exit = slideOutHorizontally(targetOffsetX = { -it }, animationSpec = tween(durationMillis = 300)),
+            modifier = Modifier
+                .fillMaxHeight()
+                .width(menuWidth)
+                .zIndex(3f)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .background(Color(0xFFE74C3C))
+                    .padding(top = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Top
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.vaca),
+                    contentDescription = "Logo",
+                    modifier = Modifier.size(40.dp)
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+
+                IconWithText(iconResId = R.drawable.casa, label = "Tablero") {
+                    navController.navigate("principal")
+                    isMenuVisible = false
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Text("MÓDULOS", color = Color.White, fontSize = 12.sp)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                IconWithText(
+                    iconResId = R.drawable.establo,
+                    label = "Espacios",
+                    onClick = {
+                        navController.navigate("listaEspacios")
+                        isMenuVisible = false
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                IconWithText(
+                    iconResId = R.drawable.geocercado,
+                    label = "Geocercas",
+                    onClick = {
+                        navController.navigate("mapa")
+                        isMenuVisible = false
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                IconWithText(
+                    iconResId = R.drawable.advertencia,
+                    label = "Alertas",
+                    onClick = {
+                        navController.navigate("alertas")
+                        isMenuVisible = false
+                    }
+                )
             }
         }
     }
