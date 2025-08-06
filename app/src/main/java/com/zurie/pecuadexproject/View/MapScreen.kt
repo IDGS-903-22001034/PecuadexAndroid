@@ -7,7 +7,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -57,9 +57,17 @@ fun MapScreen(
     val scope = rememberCoroutineScope()
 
     val gpsData by viewModel.currentGpsData.collectAsState()
+    val allAnimalsData by viewModel.allAnimalsData.collectAsState()
     val geofenceArea by viewModel.geofenceArea.collectAsState()
     val isInsideGeofence by viewModel.isInsideGeofence.collectAsState()
     val connectionStatus by viewModel.connectionStatus.collectAsState()
+    val isSimulationActive by viewModel.isSimulationActive.collectAsState()
+
+    // COORDENADAS Y RADIO FIJOS PARA LA GEOCERCA
+    // ⚠️ CAMBIAR ESTAS COORDENADAS POR LAS QUE NECESITES
+    val GEOCERCA_LATITUD = 21.063562939245507    // Latitud fija
+    val GEOCERCA_LONGITUD = -101.58053658565431  // Longitud fija
+    val GEOCERCA_RADIO = 20.0f           // Radio en metros
 
     val locationPermissions = rememberMultiplePermissionsState(
         permissions = listOf(
@@ -68,23 +76,34 @@ fun MapScreen(
         )
     )
 
-    val defaultLocation = LatLng(20.9407255, -101.4392308)
+    val defaultLocation = LatLng(GEOCERCA_LATITUD, GEOCERCA_LONGITUD)
     val currentLocation = gpsData?.let { LatLng(it.latitude, it.longitude) } ?: defaultLocation
 
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(currentLocation, 18f)
+        position = CameraPosition.fromLatLngZoom(defaultLocation, 18f)
     }
 
+    // Crear la geocerca automáticamente al inicio
+    LaunchedEffect(Unit) {
+        viewModel.setGeofenceCenter(GEOCERCA_LATITUD, GEOCERCA_LONGITUD, GEOCERCA_RADIO)
+
+        // Iniciar simulación automáticamente
+        viewModel.startSimulation()
+    }
+
+    // Centrar la cámara en la ubicación del animal cuando se reciba nueva data GPS
     LaunchedEffect(currentLocation) {
-        try {
-            cameraPositionState.animate(
-                CameraUpdateFactory.newCameraPosition(
-                    CameraPosition.fromLatLngZoom(currentLocation, 18f)
-                ),
-                1000
-            )
-        } catch (e: Exception) {
-            println("Camera animation cancelled: ${e.message}")
+        if (gpsData != null) { // Solo animar si hay datos GPS reales
+            try {
+                cameraPositionState.animate(
+                    CameraUpdateFactory.newCameraPosition(
+                        CameraPosition.fromLatLngZoom(currentLocation, 18f)
+                    ),
+                    1000
+                )
+            } catch (e: Exception) {
+                println("Camera animation cancelled: ${e.message}")
+            }
         }
     }
 
@@ -98,43 +117,69 @@ fun MapScreen(
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
-            onMapLongClick = { latLng ->
-                viewModel.setGeofenceCenter(latLng.latitude, latLng.longitude)
-            }
+            // Remover el onMapLongClick ya que la geocerca es fija
+            onMapClick = { /* La geocerca es fija, no se puede cambiar */ }
         ) {
-            gpsData?.let { data ->
+            // Mostrar todos los animales (real + simulados)
+            allAnimalsData.forEach { animalData ->
+                // ✅ Tu ESP32 se identifica como "ESP32_GPS_Client"
+                val isRealAnimal = animalData.deviceId == "REAL_DEVICE" ||
+                        animalData.deviceId.contains("ESP32") || // ← Detecta tu ESP32
+                        animalData.deviceId == "ESP32_GPS_Client" // ← Específico para tu device
+
                 Marker(
-                    state = MarkerState(position = LatLng(data.latitude, data.longitude)),
-                    title = "Animal Rastreado",
-                    snippet = "Última actualización: ${data.time}",
-                    icon = if (isInsideGeofence)
-                        com.zurie.pecuadexproject.utils.CustomMarkerUtils.createAnimalMarker(context)
-                    else
-                        com.zurie.pecuadexproject.utils.CustomMarkerUtils.createDangerAnimalMarker(context)
+                    state = MarkerState(position = LatLng(animalData.latitude, animalData.longitude)),
+                    title = if (isRealAnimal) "🔥 TU DISPOSITIVO REAL (${animalData.deviceId})" else getAnimalDisplayName(animalData.deviceId),
+                    snippet = "Última actualización: ${animalData.time} | Velocidad: ${"%.1f".format(animalData.speed)} km/h",
+                    icon = when {
+                        isRealAnimal -> {
+                            if (isInsideGeofence)
+                                com.zurie.pecuadexproject.utils.CustomMarkerUtils.createRealAnimalMarker(context)
+                            else
+                                com.zurie.pecuadexproject.utils.CustomMarkerUtils.createDangerAnimalMarker(context)
+                        }
+                        animalData.deviceId.contains("BULL") ->
+                            com.zurie.pecuadexproject.utils.CustomMarkerUtils.createBullMarker(context)
+                        animalData.deviceId.contains("CALF") ->
+                            com.zurie.pecuadexproject.utils.CustomMarkerUtils.createCalfMarker(context)
+                        animalData.deviceId.contains("SHEEP") ->
+                            com.zurie.pecuadexproject.utils.CustomMarkerUtils.createSheepMarker(context)
+                        animalData.deviceId.contains("GOAT") ->
+                            com.zurie.pecuadexproject.utils.CustomMarkerUtils.createGoatMarker(context)
+                        else ->
+                            com.zurie.pecuadexproject.utils.CustomMarkerUtils.createAnimalMarker(context)
+                    }
                 )
             }
 
-            geofenceArea?.let { area ->
-                Circle(
-                    center = LatLng(area.centerLatitude, area.centerLongitude),
-                    radius = area.radiusMeters.toDouble(),
-                    fillColor = if (isInsideGeofence)
-                        AppColors.GeofenceInside.copy(alpha = 0.2f)
-                    else
-                        AppColors.GeofenceOutside.copy(alpha = 0.2f),
-                    strokeColor = if (isInsideGeofence)
-                        AppColors.GeofenceInside
-                    else
-                        AppColors.GeofenceOutside,
-                    strokeWidth = 3f
-                )
-            }
+            // Círculo de la geocerca (siempre visible con coordenadas fijas)
+            Circle(
+                center = LatLng(GEOCERCA_LATITUD, GEOCERCA_LONGITUD),
+                radius = GEOCERCA_RADIO.toDouble(),
+                fillColor = if (isInsideGeofence)
+                    AppColors.GeofenceInside.copy(alpha = 0.2f)
+                else
+                    AppColors.GeofenceOutside.copy(alpha = 0.2f),
+                strokeColor = if (isInsideGeofence)
+                    AppColors.GeofenceInside
+                else
+                    AppColors.GeofenceOutside,
+                strokeWidth = 3f
+            )
+
+            // Marcador del centro de la geocerca (opcional)
+            Marker(
+                state = MarkerState(position = LatLng(GEOCERCA_LATITUD, GEOCERCA_LONGITUD)),
+                title = "Centro de Geocerca",
+                snippet = "Zona Segura - Radio: ${GEOCERCA_RADIO}m",
+                icon = com.zurie.pecuadexproject.utils.CustomMarkerUtils.createGeofenceCenterMarker(context)
+            )
         }
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(top = 16.dp, start = 16.dp, end = 16.dp)
                 .zIndex(3f),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top
@@ -190,6 +235,35 @@ fun MapScreen(
                     }
                 }
 
+                // Botón para toggle simulación
+                Card(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clickable {
+                            viewModel.toggleSimulation()
+                        },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isSimulationActive)
+                            AppColors.Success.copy(alpha = 0.1f)
+                        else
+                            AppColors.Surface
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = if (isSimulationActive) Icons.Outlined.Stop else Icons.Outlined.PlayArrow,
+                            contentDescription = if (isSimulationActive) "Detener simulación" else "Iniciar simulación",
+                            tint = if (isSimulationActive) AppColors.Success else AppColors.Muted,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+
                 gpsData?.let { data ->
                     Card(
                         modifier = Modifier
@@ -227,42 +301,41 @@ fun MapScreen(
                     }
                 }
 
-                geofenceArea?.let { area ->
-                    Card(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clickable {
-                                scope.launch {
-                                    try {
-                                        val bounds = com.google.android.gms.maps.model.LatLngBounds.builder()
-                                            .include(LatLng(area.centerLatitude + 0.001, area.centerLongitude + 0.001))
-                                            .include(LatLng(area.centerLatitude - 0.001, area.centerLongitude - 0.001))
-                                            .build()
+                // Botón para centrar en la geocerca
+                Card(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clickable {
+                            scope.launch {
+                                try {
+                                    val bounds = com.google.android.gms.maps.model.LatLngBounds.builder()
+                                        .include(LatLng(GEOCERCA_LATITUD + 0.001, GEOCERCA_LONGITUD + 0.001))
+                                        .include(LatLng(GEOCERCA_LATITUD - 0.001, GEOCERCA_LONGITUD - 0.001))
+                                        .build()
 
-                                        cameraPositionState.animate(
-                                            CameraUpdateFactory.newLatLngBounds(bounds, 100),
-                                            1000
-                                        )
-                                    } catch (e: Exception) {
-                                        println("Error animating to bounds: ${e.message}")
-                                    }
+                                    cameraPositionState.animate(
+                                        CameraUpdateFactory.newLatLngBounds(bounds, 100),
+                                        1000
+                                    )
+                                } catch (e: Exception) {
+                                    println("Error animating to bounds: ${e.message}")
                                 }
-                            },
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                            }
+                        },
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.ZoomOutMap,
-                                contentDescription = "Ver toda la geocerca",
-                                tint = AppColors.Primary,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Outlined.ZoomOutMap,
+                            contentDescription = "Ver geocerca",
+                            tint = AppColors.Primary,
+                            modifier = Modifier.size(24.dp)
+                        )
                     }
                 }
             }
@@ -270,15 +343,25 @@ fun MapScreen(
 
         AnimatedVisibility(
             visible = showInfoPanel,
-            enter = slideInHorizontally(initialOffsetX = { it }),
-            exit = slideOutHorizontally(targetOffsetX = { it }),
+            enter = slideInHorizontally(
+                initialOffsetX = { 0 },
+                animationSpec = tween(durationMillis = 300)
+            ) + androidx.compose.animation.fadeIn(
+                animationSpec = tween(durationMillis = 300)
+            ),
+            exit = slideOutHorizontally(
+                targetOffsetX = { 0 },
+                animationSpec = tween(durationMillis = 300)
+            ) + androidx.compose.animation.fadeOut(
+                animationSpec = tween(durationMillis = 300)
+            ),
             modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 90.dp, end = 16.dp)
-                .width(320.dp)
+                .align(Alignment.TopCenter)
+                .padding(top = 16.dp, start = 16.dp, end = 16.dp)
+                .fillMaxWidth()
                 .zIndex(2f)
         ) {
-            ImprovedInfoPanel(
+            CompactInfoPanel(
                 connectionStatus = connectionStatus,
                 gpsData = gpsData,
                 geofenceArea = geofenceArea,
@@ -286,51 +369,82 @@ fun MapScreen(
             )
         }
 
-        if (geofenceArea == null) {
-            Card(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        // Información del rebaño (reemplaza el mensaje de instrucciones)
+        Card(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(20.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(AppColors.Info.copy(alpha = 0.1f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.TouchApp,
-                            contentDescription = "Instrucción",
-                            tint = AppColors.Info,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
+                    Column {
                         Text(
-                            text = "Crear Zona Segura",
+                            text = "Rebaño Monitoreado",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = AppColors.OnSurface
                         )
                         Text(
-                            text = "Mantén presionado en el mapa para establecer una geocerca",
-                            fontSize = 14.sp,
-                            color = AppColors.Muted,
-                            lineHeight = 18.sp
+                            text = if (isSimulationActive)
+                                "${allAnimalsData.size} animales activos"
+                            else "Solo animal real",
+                            fontSize = 12.sp,
+                            color = AppColors.Muted
                         )
                     }
+
+                    // Indicador de simulación
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(
+                                if (isSimulationActive)
+                                    AppColors.Success.copy(alpha = 0.1f)
+                                else
+                                    AppColors.Muted.copy(alpha = 0.1f)
+                            )
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = if (isSimulationActive) "SIM ON" else "SIM OFF",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isSimulationActive) AppColors.Success else AppColors.Muted
+                        )
+                    }
+                }
+
+                if (isSimulationActive && allAnimalsData.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    val flockStats = viewModel.getFlockStats()
+
+                    // Estadísticas del rebaño
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        AnimalTypeChip("🐄", flockStats.cows, "Vacas")
+                    }
+                } else {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Geocerca: Radio ${GEOCERCA_RADIO}m • Lat: ${String.format("%.6f", GEOCERCA_LATITUD)} • Lng: ${String.format("%.6f", GEOCERCA_LONGITUD)}",
+                        fontSize = 11.sp,
+                        color = AppColors.Muted,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }
@@ -363,184 +477,167 @@ fun MapScreen(
 }
 
 @Composable
-private fun ImprovedInfoPanel(
+private fun CompactInfoPanel(
     connectionStatus: Boolean,
     gpsData: com.zurie.pecuadexproject.Data.Model.GpsData?,
     geofenceArea: com.zurie.pecuadexproject.Data.Model.GeofenceArea?,
     isInsideGeofence: Boolean
 ) {
     Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = AppColors.Surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
-        modifier = Modifier.border(1.dp, AppColors.Border, RoundedCornerShape(20.dp))
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = AppColors.Surface.copy(alpha = 0.95f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 60.dp) // Espacio para no chocar con los botones
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Header compacto
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
                     "Estado del Sistema",
-                    fontSize = 18.sp,
+                    fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = AppColors.OnSurface
+                    color = AppColors.OnSurface,
+                    textAlign = TextAlign.Center
                 )
+                Spacer(modifier = Modifier.width(8.dp))
                 Box(
                     modifier = Modifier
-                        .size(12.dp)
+                        .size(8.dp)
                         .clip(CircleShape)
                         .background(if (connectionStatus) AppColors.Success else AppColors.Error)
                 )
             }
 
-            InfoCard(
-                icon = Icons.Outlined.Wifi,
-                title = "Conexión MQTT",
-                value = if (connectionStatus) "Conectado" else "Desconectado",
-                status = if (connectionStatus) StatusType.SUCCESS else StatusType.ERROR
-            )
+            // Fila con los estados principales
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Estado de conexión
+                CompactStatusItem(
+                    icon = Icons.Outlined.Wifi,
+                    value = if (connectionStatus) "ON" else "OFF",
+                    color = if (connectionStatus) AppColors.Success else AppColors.Error
+                )
 
-            gpsData?.let { data ->
-                InfoCard(
+                // GPS y satélites
+                gpsData?.let { data ->
+                    CompactStatusItem(
+                        icon = Icons.Outlined.Satellite,
+                        value = "${data.satellites}",
+                        color = when {
+                            data.satellites >= 6 -> AppColors.Success
+                            data.satellites >= 4 -> AppColors.Warning
+                            else -> AppColors.Error
+                        }
+                    )
+                } ?: CompactStatusItem(
                     icon = Icons.Outlined.Satellite,
-                    title = "Señal GPS",
-                    value = "${data.satellites} satélites",
-                    subtitle = "Precisión: ${"%.1f".format(data.hdop)}",
-                    status = when {
-                        data.satellites >= 6 -> StatusType.SUCCESS
-                        data.satellites >= 4 -> StatusType.WARNING
-                        else -> StatusType.ERROR
-                    }
+                    value = "0",
+                    color = AppColors.Error
                 )
 
-                InfoCard(
-                    icon = Icons.Outlined.Speed,
-                    title = "Velocidad",
-                    value = "${"%.1f".format(data.speed)} km/h",
-                    subtitle = "Altitud: ${"%.0f".format(data.altitude)}m",
-                    status = StatusType.NEUTRAL
+                // Estado de geocerca
+                geofenceArea?.let { area ->
+                    CompactStatusItem(
+                        icon = if (isInsideGeofence) Icons.Outlined.Shield else Icons.Outlined.Warning,
+                        value = if (isInsideGeofence) "OK" else "OUT",
+                        color = if (isInsideGeofence) AppColors.Success else AppColors.Error
+                    )
+                } ?: CompactStatusItem(
+                    icon = Icons.Outlined.Shield,
+                    value = "N/A",
+                    color = AppColors.Muted
                 )
+
+                // Velocidad (si hay datos GPS)
+                gpsData?.let { data ->
+                    CompactStatusItem(
+                        icon = Icons.Outlined.Speed,
+                        value = "${data.speed.toInt()}",
+                        color = AppColors.Primary
+                    )
+                }
             }
 
-            geofenceArea?.let { area ->
-                val distance = gpsData?.let { data ->
+            // Información adicional compacta
+            gpsData?.let { data ->
+                val distance = geofenceArea?.let { area ->
                     com.zurie.pecuadexproject.utils.LocationUtils.calculateDistance(
                         data.latitude, data.longitude,
                         area.centerLatitude, area.centerLongitude
                     )
                 }
 
-                InfoCard(
-                    icon = if (isInsideGeofence) Icons.Outlined.Shield else Icons.Outlined.Warning,
-                    title = "Zona Segura",
-                    value = if (isInsideGeofence) "Animal Seguro" else "Fuera de Zona",
-                    subtitle = distance?.let { "Distancia: ${"%.1f".format(it)}m" },
-                    status = if (isInsideGeofence) StatusType.SUCCESS else StatusType.ERROR
-                )
-            }
-
-            gpsData?.let { data ->
-                Text(
-                    "Última actualización: ${data.date} ${data.time}",
-                    fontSize = 12.sp,
-                    color = AppColors.Muted,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = distance?.let { "Dist: ${"%.1f".format(it)}m" } ?: "Sin geocerca",
+                        fontSize = 11.sp,
+                        color = AppColors.Muted
+                    )
+                    Text(
+                        text = " • ${data.time}",
+                        fontSize = 11.sp,
+                        color = AppColors.Muted
+                    )
+                }
+            } ?: Text(
+                text = "Esperando datos GPS...",
+                fontSize = 11.sp,
+                color = AppColors.Muted,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
+            )
         }
     }
 }
 
 @Composable
-private fun InfoCard(
+private fun CompactStatusItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
     value: String,
-    subtitle: String? = null,
-    status: StatusType
+    color: Color
 ) {
-    Card(
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = when (status) {
-                StatusType.SUCCESS -> AppColors.Success.copy(alpha = 0.05f)
-                StatusType.ERROR -> AppColors.Error.copy(alpha = 0.05f)
-                StatusType.WARNING -> AppColors.Warning.copy(alpha = 0.05f)
-                StatusType.NEUTRAL -> AppColors.Gray100
-            }
-        ),
-        border = BorderStroke(
-            1.dp,
-            when (status) {
-                StatusType.SUCCESS -> AppColors.Success.copy(alpha = 0.2f)
-                StatusType.ERROR -> AppColors.Error.copy(alpha = 0.2f)
-                StatusType.WARNING -> AppColors.Warning.copy(alpha = 0.2f)
-                StatusType.NEUTRAL -> AppColors.Border
-            }
-        )
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Row(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .size(32.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(color.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(
-                        when (status) {
-                            StatusType.SUCCESS -> AppColors.Success.copy(alpha = 0.15f)
-                            StatusType.ERROR -> AppColors.Error.copy(alpha = 0.15f)
-                            StatusType.WARNING -> AppColors.Warning.copy(alpha = 0.15f)
-                            StatusType.NEUTRAL -> AppColors.Primary.copy(alpha = 0.15f)
-                        }
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = title,
-                    tint = when (status) {
-                        StatusType.SUCCESS -> AppColors.Success
-                        StatusType.ERROR -> AppColors.Error
-                        StatusType.WARNING -> AppColors.Warning
-                        StatusType.NEUTRAL -> AppColors.Primary
-                    },
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    fontSize = 14.sp,
-                    color = AppColors.Muted,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = value,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = AppColors.OnSurface
-                )
-                subtitle?.let {
-                    Text(
-                        text = it,
-                        fontSize = 12.sp,
-                        color = AppColors.Muted
-                    )
-                }
-            }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(16.dp)
+            )
         }
+
+        Text(
+            text = value,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = color,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
@@ -695,5 +792,55 @@ private fun MenuItemCard(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun AnimalTypeChip(emoji: String, count: Int, label: String) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = emoji,
+            fontSize = 16.sp
+        )
+        Text(
+            text = count.toString(),
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color = AppColors.OnSurface
+        )
+        Text(
+            text = label,
+            fontSize = 9.sp,
+            color = AppColors.Muted
+        )
+    }
+}
+
+// Función auxiliar para obtener nombre del animal
+private fun getAnimalDisplayName(deviceId: String): String {
+    return when {
+        deviceId.contains("COW") -> {
+            val number = deviceId.substringAfterLast("_")
+            "Vaca $number"
+        }
+        deviceId.contains("BULL") -> {
+            val number = deviceId.substringAfterLast("_")
+            "Toro $number"
+        }
+        deviceId.contains("CALF") -> {
+            val number = deviceId.substringAfterLast("_")
+            "Cría $number"
+        }
+        deviceId.contains("SHEEP") -> {
+            val number = deviceId.substringAfterLast("_")
+            "Oveja $number"
+        }
+        deviceId.contains("GOAT") -> {
+            val number = deviceId.substringAfterLast("_")
+            "Cabra $number"
+        }
+        else -> deviceId
     }
 }
