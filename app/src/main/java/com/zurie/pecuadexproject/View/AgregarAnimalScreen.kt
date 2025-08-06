@@ -29,9 +29,8 @@ import com.zurie.pecuadexproject.Data.Model.Animal
 import com.zurie.pecuadexproject.Data.Model.Raza
 import com.zurie.pecuadexproject.ViewModels.AnimalViewModel
 import com.zurie.pecuadexproject.ViewModels.RazaViewModel
-import java.time.LocalDate
+import com.zurie.pecuadexproject.ui.theme.AppColors
 import java.time.format.DateTimeFormatter
-import java.time.format.ResolverStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
@@ -42,15 +41,13 @@ fun AgregarAnimalScreen(
     animalViewModel: AnimalViewModel = viewModel(),
     razaViewModel: RazaViewModel = viewModel()
 ) {
-    // Estados para los campos del formulario
     var apodo by remember { mutableStateOf("") }
-    var sexo by remember { mutableStateOf("") } // "M" o "H"
+    var sexo by remember { mutableStateOf("") }
     var razaSeleccionada by remember { mutableStateOf<Raza?>(null) }
     var peso by remember { mutableStateOf<Int?>(null) }
-    var pesoText by remember { mutableStateOf("") } // Para el TextField
+    var pesoText by remember { mutableStateOf("") }
     var fechaNacimiento by remember { mutableStateOf("") }
 
-    // Estados para los diálogos
     var showDatePicker by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showRazaDialog by remember { mutableStateOf(false) }
@@ -70,7 +67,8 @@ fun AgregarAnimalScreen(
                     Text(
                         "Nuevo Animal",
                         style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.OnSurface
                         )
                     )
                 },
@@ -82,13 +80,13 @@ fun AgregarAnimalScreen(
                         Icon(
                             Icons.Default.ArrowBack,
                             contentDescription = "Regresar",
-                            tint = Color(0xFF4285F4)
+                            tint = AppColors.Primary
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black
+                    containerColor = AppColors.Surface,
+                    titleContentColor = AppColors.OnSurface
                 )
             )
         }
@@ -97,17 +95,16 @@ fun AgregarAnimalScreen(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
-                .background(Color.White)
+                .background(AppColors.Background)
                 .padding(horizontal = 24.dp)
                 .verticalScroll(rememberScrollState())
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Campo Apodo
             Text(
                 "Apodo del animal",
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color(0xFF5F6368),
+                    color = AppColors.Muted,
                     fontWeight = FontWeight.Medium
                 ),
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -118,8 +115,10 @@ fun AgregarAnimalScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF4285F4),
-                    unfocusedBorderColor = Color(0xFFDADCE0)
+                    focusedBorderColor = AppColors.Primary,
+                    unfocusedBorderColor = AppColors.Border,
+                    cursorColor = AppColors.Primary,
+                    focusedLabelColor = AppColors.Primary
                 ),
                 placeholder = { Text("Ej: Lola, Torito") },
                 singleLine = true
@@ -127,11 +126,10 @@ fun AgregarAnimalScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Selección de Sexo
             Text(
                 "Sexo",
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color(0xFF5F6368),
+                    color = AppColors.Muted,
                     fontWeight = FontWeight.Medium
                 ),
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -140,9 +138,7 @@ fun AgregarAnimalScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Opciones de sexo con valores para el backend
                 val opcionesSexo = listOf("M" to "Macho", "H" to "Hembra")
-
                 opcionesSexo.forEach { (valor, etiqueta) ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -157,13 +153,13 @@ fun AgregarAnimalScreen(
                             selected = (sexo == valor),
                             onClick = { sexo = valor },
                             colors = RadioButtonDefaults.colors(
-                                selectedColor = Color(0xFF4285F4)
+                                selectedColor = AppColors.Primary
                             )
                         )
                         Text(
                             etiqueta,
                             modifier = Modifier.padding(start = 8.dp),
-                            style = MaterialTheme.typography.bodyLarge
+                            style = MaterialTheme.typography.bodyLarge.copy(color = AppColors.OnSurface)
                         )
                     }
                 }
@@ -171,11 +167,10 @@ fun AgregarAnimalScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Selección de Raza
             Text(
                 "Raza",
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color(0xFF5F6368),
+                    color = AppColors.Muted,
                     fontWeight = FontWeight.Medium
                 ),
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -185,10 +180,10 @@ fun AgregarAnimalScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = Color.White,
-                    contentColor = Color(0xFF3C4043)
+                    containerColor = AppColors.Surface,
+                    contentColor = AppColors.OnSurface
                 ),
-                border = BorderStroke(1.dp, Color(0xFFDADCE0))
+                border = BorderStroke(1.dp, AppColors.Border)
             ) {
                 Text(
                     razaSeleccionada?.nombre ?: "Selecciona una raza",
@@ -198,11 +193,10 @@ fun AgregarAnimalScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Campo Peso (manejado como Int)
             Text(
                 "Peso (kg)",
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color(0xFF5F6368),
+                    color = AppColors.Muted,
                     fontWeight = FontWeight.Medium
                 ),
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -211,13 +205,15 @@ fun AgregarAnimalScreen(
                 value = pesoText,
                 onValueChange = {
                     pesoText = it
-                    peso = it.toIntOrNull() // Convierte a Int o null si no es número válido
+                    peso = it.toIntOrNull()
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF4285F4),
-                    unfocusedBorderColor = Color(0xFFDADCE0)
+                    focusedBorderColor = AppColors.Primary,
+                    unfocusedBorderColor = AppColors.Border,
+                    cursorColor = AppColors.Primary,
+                    focusedLabelColor = AppColors.Primary
                 ),
                 placeholder = { Text("Ej: 450") },
                 singleLine = true,
@@ -226,11 +222,10 @@ fun AgregarAnimalScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Fecha de nacimiento con selector
             Text(
                 "Fecha de nacimiento",
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color(0xFF5F6368),
+                    color = AppColors.Muted,
                     fontWeight = FontWeight.Medium
                 ),
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -241,8 +236,10 @@ fun AgregarAnimalScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF4285F4),
-                    unfocusedBorderColor = Color(0xFFDADCE0)
+                    focusedBorderColor = AppColors.Primary,
+                    unfocusedBorderColor = AppColors.Border,
+                    cursorColor = AppColors.Primary,
+                    focusedLabelColor = AppColors.Primary
                 ),
                 placeholder = { Text("dd/mm/aaaa") },
                 singleLine = true,
@@ -252,7 +249,7 @@ fun AgregarAnimalScreen(
                         Icon(
                             Icons.Default.CalendarToday,
                             contentDescription = "Seleccionar fecha",
-                            tint = Color(0xFF4285F4)
+                            tint = AppColors.Primary
                         )
                     }
                 }
@@ -260,7 +257,6 @@ fun AgregarAnimalScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Botones Guardar y Cancelar
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -270,17 +266,16 @@ fun AgregarAnimalScreen(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color.White,
-                        contentColor = Color(0xFF5F6368)
+                        containerColor = AppColors.Surface,
+                        contentColor = AppColors.Muted
                     ),
-                    border = BorderStroke(1.dp, Color(0xFFDADCE0))
+                    border = BorderStroke(1.dp, AppColors.Border)
                 ) {
                     Text("Cancelar")
                 }
 
                 Button(
                     onClick = {
-                        // Validación mejorada con mensajes específicos
                         when {
                             apodo.isBlank() -> {
                                 errorMessage = "Debes ingresar un apodo para el animal"
@@ -309,7 +304,7 @@ fun AgregarAnimalScreen(
                                         sexo = sexo,
                                         razaId = razaSeleccionada!!.idRaza,
                                         espacioId = espacioId,
-                                        peso = peso!!, // Usamos !! porque ya validamos que no es null
+                                        peso = peso!!,
                                         fechaNacimiento = fechaNacimiento,
                                         critico = false
                                     )
@@ -334,14 +329,14 @@ fun AgregarAnimalScreen(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4285F4),
-                        contentColor = Color.White
+                        containerColor = AppColors.Primary,
+                        contentColor = AppColors.OnPrimary
                     ),
                     enabled = !animalViewModel.state.isLoading
                 ) {
                     if (animalViewModel.state.isLoading) {
                         CircularProgressIndicator(
-                            color = Color.White,
+                            color = AppColors.OnPrimary,
                             modifier = Modifier.size(24.dp)
                         )
                     } else {
@@ -354,7 +349,6 @@ fun AgregarAnimalScreen(
         }
     }
 
-    // Selector de fecha (usando DatePickerUtils)
     if (showDatePicker) {
         Dialog(onDismissRequest = { showDatePicker = false }) {
             DatePickerDialog(
@@ -367,7 +361,6 @@ fun AgregarAnimalScreen(
         }
     }
 
-    // Diálogo para seleccionar raza
     if (showRazaDialog) {
         AlertDialog(
             onDismissRequest = { showRazaDialog = false },
@@ -375,7 +368,8 @@ fun AgregarAnimalScreen(
                 Text(
                     "Seleccionar raza",
                     style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = AppColors.OnSurface
                     )
                 )
             },
@@ -389,7 +383,8 @@ fun AgregarAnimalScreen(
                     if (razas.isEmpty()) {
                         Text(
                             "No hay razas disponibles",
-                            modifier = Modifier.padding(16.dp)
+                            modifier = Modifier.padding(16.dp),
+                            color = AppColors.Muted
                         )
                     } else {
                         razas.forEach { raza ->
@@ -404,13 +399,14 @@ fun AgregarAnimalScreen(
                                 elevation = CardDefaults.cardElevation(2.dp),
                                 colors = CardDefaults.cardColors(
                                     containerColor = if (razaSeleccionada?.idRaza == raza.idRaza)
-                                        Color(0xFFE8F0FE) else Color.White
+                                        AppColors.GradientStart else AppColors.Surface
                                 )
                             ) {
                                 Text(
                                     text = raza.nombre,
                                     modifier = Modifier.padding(16.dp),
-                                    style = MaterialTheme.typography.bodyLarge
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = AppColors.OnSurface
                                 )
                             }
                         }
@@ -421,7 +417,7 @@ fun AgregarAnimalScreen(
                 TextButton(
                     onClick = { showRazaDialog = false },
                     colors = ButtonDefaults.textButtonColors(
-                        contentColor = Color(0xFF4285F4)
+                        contentColor = AppColors.Primary
                     )
                 ) {
                     Text("Cancelar")
@@ -430,7 +426,6 @@ fun AgregarAnimalScreen(
         )
     }
 
-    // Diálogo de éxito
     if (showSuccessDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -441,12 +436,16 @@ fun AgregarAnimalScreen(
                 Text(
                     "¡Éxito!",
                     style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = AppColors.Success
                     )
                 )
             },
             text = {
-                Text("El animal se ha agregado correctamente")
+                Text(
+                    "El animal se ha agregado correctamente",
+                    color = AppColors.OnSurface
+                )
             },
             confirmButton = {
                 Button(
@@ -455,7 +454,8 @@ fun AgregarAnimalScreen(
                         navController.popBackStack()
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4285F4)
+                        containerColor = AppColors.Success,
+                        contentColor = AppColors.OnPrimary
                     )
                 ) {
                     Text("Aceptar")
@@ -464,7 +464,6 @@ fun AgregarAnimalScreen(
         )
     }
 
-    // Diálogo de error
     if (showErrorDialog) {
         AlertDialog(
             onDismissRequest = { showErrorDialog = false },
@@ -472,17 +471,22 @@ fun AgregarAnimalScreen(
                 Text(
                     "Error",
                     style = MaterialTheme.typography.titleLarge.copy(
-                        color = Color(0xFFD32F2F),
+                        color = AppColors.Error,
                         fontWeight = FontWeight.Bold
                     )
                 )
             },
-            text = { Text(errorMessage) },
+            text = {
+                Text(
+                    errorMessage,
+                    color = AppColors.OnSurface
+                )
+            },
             confirmButton = {
                 TextButton(
                     onClick = { showErrorDialog = false },
                     colors = ButtonDefaults.textButtonColors(
-                        contentColor = Color(0xFF4285F4)
+                        contentColor = AppColors.Primary
                     )
                 ) {
                     Text("Entendido")

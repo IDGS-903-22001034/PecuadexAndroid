@@ -13,7 +13,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -22,6 +21,7 @@ import com.zurie.pecuadexproject.Data.Model.Espacio
 import com.zurie.pecuadexproject.Data.Model.Raza
 import com.zurie.pecuadexproject.ViewModels.EspacioViewModel
 import com.zurie.pecuadexproject.ViewModels.RazaViewModel
+import com.zurie.pecuadexproject.ui.theme.AppColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,27 +53,26 @@ fun EspacioScreen(
                     Text(
                         "Agregar Espacio",
                         style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.OnSurface
                         )
                     )
                 },
                 navigationIcon = {
                     IconButton(
-                        onClick = {
-                            navController?.popBackStack()
-                        },
+                        onClick = { navController?.popBackStack() },
                         modifier = Modifier.padding(8.dp)
                     ) {
                         Icon(
                             Icons.Default.ArrowBack,
                             contentDescription = "Regresar",
-                            tint = Color(0xFF4285F4)
+                            tint = AppColors.Primary
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black
+                    containerColor = AppColors.Surface,
+                    titleContentColor = AppColors.OnSurface
                 )
             )
         }
@@ -82,7 +81,7 @@ fun EspacioScreen(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
-                .background(Color.White)
+                .background(AppColors.Background)
                 .padding(horizontal = 24.dp)
                 .verticalScroll(rememberScrollState())
         ) {
@@ -91,7 +90,7 @@ fun EspacioScreen(
             Text(
                 "Nombre del espacio",
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color(0xFF5F6368),
+                    color = AppColors.Muted,
                     fontWeight = FontWeight.Medium
                 ),
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -102,8 +101,10 @@ fun EspacioScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF4285F4),
-                    unfocusedBorderColor = Color(0xFFDADCE0)
+                    focusedBorderColor = AppColors.Primary,
+                    unfocusedBorderColor = AppColors.Border,
+                    cursorColor = AppColors.Primary,
+                    focusedLabelColor = AppColors.Primary
                 ),
                 placeholder = { Text("Ej: Corral 1, Pastizal B") },
                 singleLine = true
@@ -114,7 +115,7 @@ fun EspacioScreen(
             Text(
                 "Dirección",
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color(0xFF5F6368),
+                    color = AppColors.Muted,
                     fontWeight = FontWeight.Medium
                 ),
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -125,8 +126,10 @@ fun EspacioScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFF4285F4),
-                    unfocusedBorderColor = Color(0xFFDADCE0)
+                    focusedBorderColor = AppColors.Primary,
+                    unfocusedBorderColor = AppColors.Border,
+                    cursorColor = AppColors.Primary,
+                    focusedLabelColor = AppColors.Primary
                 ),
                 placeholder = { Text("Ubicación exacta del espacio") },
                 singleLine = true
@@ -137,7 +140,7 @@ fun EspacioScreen(
             Text(
                 "Raza asignada",
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color(0xFF5F6368),
+                    color = AppColors.Muted,
                     fontWeight = FontWeight.Medium
                 ),
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -147,14 +150,15 @@ fun EspacioScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = Color.White,
-                    contentColor = Color(0xFF3C4043)
+                    containerColor = AppColors.Surface,
+                    contentColor = AppColors.OnSurface
                 ),
-                border = BorderStroke(1.dp, Color(0xFFDADCE0))
+                border = BorderStroke(1.dp, AppColors.Border)
             ) {
                 Text(
                     razaSeleccionada?.nombre ?: "Selecciona una raza",
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = AppColors.OnSurface
                 )
             }
 
@@ -165,16 +169,14 @@ fun EspacioScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 OutlinedButton(
-                    onClick = {
-                        navController?.popBackStack()
-                    },
+                    onClick = { navController?.popBackStack() },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color.White,
-                        contentColor = Color(0xFF5F6368)
+                        containerColor = AppColors.Surface,
+                        contentColor = AppColors.Muted
                     ),
-                    border = BorderStroke(1.dp, Color(0xFFDADCE0))
+                    border = BorderStroke(1.dp, AppColors.Border)
                 ) {
                     Text("Cancelar")
                 }
@@ -217,8 +219,8 @@ fun EspacioScreen(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4285F4),
-                        contentColor = Color.White
+                        containerColor = AppColors.Primary,
+                        contentColor = AppColors.OnPrimary
                     )
                 ) {
                     Text("Guardar")
@@ -236,7 +238,8 @@ fun EspacioScreen(
                 Text(
                     "Seleccionar raza",
                     style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = AppColors.OnSurface
                     )
                 )
             },
@@ -250,7 +253,8 @@ fun EspacioScreen(
                     if (estadoRaza.razas.isEmpty()) {
                         Text(
                             "No hay razas disponibles",
-                            modifier = Modifier.padding(16.dp)
+                            modifier = Modifier.padding(16.dp),
+                            color = AppColors.Muted
                         )
                     } else {
                         estadoRaza.razas.forEach { raza ->
@@ -265,13 +269,14 @@ fun EspacioScreen(
                                 elevation = CardDefaults.cardElevation(2.dp),
                                 colors = CardDefaults.cardColors(
                                     containerColor = if (razaSeleccionada?.idRaza == raza.idRaza)
-                                        Color(0xFFE8F0FE) else Color.White
+                                        AppColors.GradientStart else AppColors.Surface
                                 )
                             ) {
                                 Text(
                                     text = raza.nombre,
                                     modifier = Modifier.padding(16.dp),
-                                    style = MaterialTheme.typography.bodyLarge
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = AppColors.OnSurface
                                 )
                             }
                         }
@@ -282,7 +287,7 @@ fun EspacioScreen(
                 TextButton(
                     onClick = { showRazaDialog = false },
                     colors = ButtonDefaults.textButtonColors(
-                        contentColor = Color(0xFF4285F4)
+                        contentColor = AppColors.Primary
                     )
                 ) {
                     Text("Cancelar")
@@ -301,12 +306,16 @@ fun EspacioScreen(
                 Text(
                     "¡Éxito!",
                     style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = AppColors.Success
                     )
                 )
             },
             text = {
-                Text("El espacio se ha creado correctamente")
+                Text(
+                    "El espacio se ha creado correctamente",
+                    color = AppColors.OnSurface
+                )
             },
             confirmButton = {
                 Button(
@@ -315,7 +324,8 @@ fun EspacioScreen(
                         navController?.popBackStack()
                     },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4285F4)
+                        containerColor = AppColors.Success,
+                        contentColor = AppColors.OnPrimary
                     )
                 ) {
                     Text("Aceptar")
@@ -331,17 +341,22 @@ fun EspacioScreen(
                 Text(
                     "Error",
                     style = MaterialTheme.typography.titleLarge.copy(
-                        color = Color(0xFFD32F2F),
+                        color = AppColors.Error,
                         fontWeight = FontWeight.Bold
                     )
                 )
             },
-            text = { Text(errorMessage) },
+            text = {
+                Text(
+                    errorMessage,
+                    color = AppColors.OnSurface
+                )
+            },
             confirmButton = {
                 TextButton(
                     onClick = { showErrorDialog = false },
                     colors = ButtonDefaults.textButtonColors(
-                        contentColor = Color(0xFF4285F4)
+                        contentColor = AppColors.Primary
                     )
                 ) {
                     Text("Entendido")
